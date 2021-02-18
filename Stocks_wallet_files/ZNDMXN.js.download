@@ -1,0 +1,142 @@
+
+                ;(function(p,l,o,w,i,n,g){if(!p[i]){p.GlobalSnowplowNamespace=p.GlobalSnowplowNamespace||[];
+                p.GlobalSnowplowNamespace.push(i);p[i]=function(){(p[i].q=p[i].q||[]).push(arguments)
+                };p[i].q=p[i].q||[];n=l.createElement(o);g=l.getElementsByTagName(o)[0];n.async=1;
+                n.src=w;g.parentNode.insertBefore(n,g)}}(window,document,"script","https://d3rqem538l0q4a.cloudfront.net/Scripts/chloe.js","chloe"));
+
+                let hostedFileRegex = /\/hf\/[a-zA-Z0-9_-]+/;
+
+                window.chloe('newTracker', 'cf', '//analytics.insightly.services/', { 
+                    appId: 'ZNDMXN',
+                    cookieName: '_chloe_',
+                    platform: 'web',
+                    crossDomainLinker: function (linkElement) {
+                        return hostedFileRegex.test(linkElement.href);
+                    }
+                });
+
+                window.chloe('trackPageView');
+
+                function getSnowplowDuid(cookieName) {
+                    cookieName = cookieName || '_sp_';
+                    let matcher = new RegExp(cookieName + 'id\\.[a-f0-9]+=([^;]+);?');
+                    let match = document.cookie.match(matcher);
+                    if (match && match[1]) {
+                        return match[1].split('.')[0];
+                    } 
+                    else {
+                        return false;
+                    }
+                }
+
+                function getSnowplowSessionId(cookieName) {
+                    cookieName = cookieName || '_sp_';
+                    let matcher = new RegExp(cookieName + 'id\\.[a-f0-9]+=([^;]+);?');
+                    let match = document.cookie.match(matcher);
+                    if (match && match[1]) {
+                        let items = match[1].split('.');
+                        return items[items.length-1];
+                    } 
+                    else {
+                        return false;
+                    }
+                }
+            
+                window.chloe(function() {
+                    let duid = getSnowplowDuid('_chloe_');
+                    let sid = getSnowplowSessionId('_chloe_');
+                    let formsCollection = document.forms;
+
+                    for(var i=0;i<formsCollection.length;i++)
+                    {
+                        let current = formsCollection[i];
+
+                        if (current && current.action && current.action.startsWith('https://chloe.insightly.services/')) {                        
+                            let hiddenDuidField = document.createElement('input');
+                            hiddenDuidField.setAttribute('type', 'hidden');
+                            hiddenDuidField.setAttribute('name', 'hiddenDuid');
+                            hiddenDuidField.setAttribute('value', duid);
+                            current.appendChild(hiddenDuidField);
+
+                            let hiddenSidField = document.createElement('input');
+                            hiddenSidField.setAttribute('type', 'hidden');
+                            hiddenSidField.setAttribute('name', 'hiddenSid');
+                            hiddenSidField.setAttribute('value', sid);
+                            current.appendChild(hiddenSidField);
+                        }
+
+                        
+                    }
+
+                    
+                });
+
+                window.chloe('enableFormTracking');
+                
+                function ytJsApiEnabled(url) {
+	                    return url.indexOf('enablejsapi') > -1;
+                    }
+
+                    let iframes = document.getElementsByTagName("iframe");
+                    for (let i=0; i< iframes.length; i++) {
+	                    if (iframes[i].src.match("youtube.com")) {
+		                    let url = iframes[i].src;
+		                    let parser = document.createElement("a");
+		                    parser.href = url;
+		
+		                    if(!ytJsApiEnabled(parser.search)) {
+			                    parser.search = (parser.search.length > 0 ? parser.search + "&" : "") + "enablejsapi=1";
+		                    }
+		
+		                    iframes[i].src = parser.href;
+	                    }
+                    }
+
+                    let tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    let firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                    function onYouTubeIframeAPIReady() {
+	                    let iframes = document.getElementsByTagName("iframe");
+	                    for (let i=0; i < iframes.length; i++) {
+		                    if (iframes[i].src.match("youtube.com")) {
+			                    new YT.Player(iframes[i], {events: {'onStateChange': onPlayerStateChange}});			  
+		                    };
+	                    }
+                    }
+
+                    function onPlayerStateChange(event) {
+	                    let player = event.target;
+	                    let videoData = player.getVideoData();
+	                    let videoID = videoData.video_id;
+	                    let videoName = videoData.title;
+	                    let currentTime = player.getCurrentTime();
+    
+	                    switch (event.data) {
+                            case 1:
+                                window.chloe('trackStructEvent', 'YouTube', 'played', videoID, videoName, Math.round(currentTime));
+                                break;
+                            case 2:
+                                if (player.getDuration() - currentTime != 0) {
+                                    window.chloe('trackStructEvent', 'YouTube', 'paused', videoID, videoName, Math.round(currentTime));
+                                };
+                                break;
+                            case 0:
+                                window.chloe('trackStructEvent', 'YouTube', 'ended', videoID, videoName, Math.round(currentTime));
+                                break;
+                        };
+                    };
+
+                    function trackStructured(category, action, label, property, value)
+                    {
+                        window.chloe('trackStructEvent', "cse_" + category, action, label, property, value);
+                    };
+
+                    function trackUnstructured(data)
+                    {
+                        window.chloe('trackSelfDescribingEvent', data);
+                    };
+
+                    
+            
